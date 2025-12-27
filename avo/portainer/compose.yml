@@ -1,0 +1,20 @@
+version: '3'
+
+volumes:
+  portainer_data:
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data portainer/portainer-ce
+      - ./admin-password.secrets:/etc/admin-password.secrets
+    ports:
+      - 9443:9443
+    command: --admin-password-file /etc/admin-password.secrets
+
+
