@@ -18,14 +18,13 @@ services:
     restart: always
 
   app:
-    image: jknetl/nextcloud:$NEXTCLOUD_VERSION
-    build: 
-      context: ./app
-      args:
-        NEXTCLOUD_VERSION: $NEXTCLOUD_VERSION
+    image: nextcloud:$NEXTCLOUD_VERSION
     restart: always
     volumes:
       - $STORAGE_DIR/web:/var/www/html
+      - ./custom-entrypoint.sh:/custom-entrypoint.sh:ro
+    entrypoint: /custom-entrypoint.sh
+    command: php-fpm
     environment:
       - MYSQL_HOST=$DB_HOST
       - REDIS_HOST=redis
@@ -40,11 +39,13 @@ services:
       - ingress
 
   cron:
-    image: jknetl/nextcloud:$NEXTCLOUD_VERSION
+    image: nextcloud:$NEXTCLOUD_VERSION
     restart: always
     volumes:
       - $STORAGE_DIR/web:/var/www/html
-    entrypoint: /cron.sh
+      - ./custom-entrypoint.sh:/custom-entrypoint.sh:ro
+    entrypoint: /custom-entrypoint.sh
+    command: /cron.sh
     environment:
       - MYSQL_HOST=$DB_HOST
       - REDIS_HOST=redis
