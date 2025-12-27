@@ -1,0 +1,39 @@
+version: "3"
+services:
+  db:
+    image: mariadb:11
+    container_name: wordpress-penta-db
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.secrets
+    volumes:
+      - /home/docker/wordpress-penta/db:/var/lib/mysql
+    networks:
+      - wordpress-network
+
+  wordpress:
+    image: wordpress:6.9
+    container_name: wordpress-penta
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - .env
+      - .env.secrets
+    ports:
+      - "18080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+    volumes:
+      - /home/docker/wordpress-penta/data:/var/www/html
+    networks:
+      - wordpress-network
+      - ingress
+
+networks:
+  wordpress-network:
+    driver: bridge
+  ingress:
+    name: ingress
+    external: true
