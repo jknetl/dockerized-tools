@@ -43,3 +43,7 @@ netboot-pxe/dnsmasq/dnsmasq.conf
 **/*.secrets
 
 avo/couchdb/data
+
+avo/couchdb/couchdb_data_backup_*
+
+avo/unifi/unifi_data
