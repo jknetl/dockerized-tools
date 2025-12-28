@@ -1,0 +1,18 @@
+version: '3'
+services:
+  couchdb:
+    image: couchdb:3.5
+    ports:
+      - "5984:5984"
+    environment:
+      - COUCHDB_USER=admin
+    env_file:
+      - .env.secrets
+    volumes:
+        - ./data:/opt/couchdb/data
+        - ./local.ini:/opt/couchdb/etc/local.ini
+    restart: unless-stopped
+networks:
+  default:
+    external: true
+    name: ingress

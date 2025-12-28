@@ -1,0 +1,50 @@
+version: "2"
+
+
+services:
+  server:
+    image: gitea/gitea:1.25.3
+    restart: always
+    env_file:
+      - .env
+      - .env.secrets
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=db:3306
+      - GITEA__database__NAME=$MYSQL_DB_NAME
+      - GITEA__database__USER=$MYSQL_USER
+#      - GITEA__database__PASSWD - imported by env_file:
+    volumes:
+      - $STORAGE_DIR/data:/data
+      - $STORAGE_DIR/config:/etc/gitea
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+      - "2222:2222"
+    depends_on:
+      - db
+    networks:
+      - default
+      - ingress
+  db:
+    image: mysql:9.5.0
+    restart: always
+    env_file:
+      - .env
+      - .env.secrets
+    environment:
+        - MYSQL_DATABASE=$MYSQL_DB_NAME
+#        - MYSQL_USER  - imported by env_file:
+#        - MYSQL_PASSWORD - imported by env_file:
+#        - MYSQL_ROOT_PASSWORD - imported by env_file:
+    volumes:
+        - $STORAGE_DIR/mysql:/var/lib/mysql
+
+networks:
+  default:
+  ingress:
+    name: ingress
+    external: true

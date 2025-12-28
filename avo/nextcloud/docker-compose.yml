@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb:$MARIA_DB_VERSION
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - $STORAGE_DIR/db-data:/var/lib/mysql
+    environment:
+      - MARIADB_AUTO_UPGRADE=1
+      - MARIADB_DISABLE_UPGRADE_BACKUP=1
+    env_file:
+      - db.env
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  app:
+    image: nextcloud:$NEXTCLOUD_VERSION
+    restart: always
+    volumes:
+      - $STORAGE_DIR/web:/var/www/html
+      - ./custom-entrypoint.sh:/custom-entrypoint.sh:ro
+    entrypoint: /custom-entrypoint.sh
+    command: php-fpm
+    environment:
+      - MYSQL_HOST=$DB_HOST
+      - REDIS_HOST=redis
+    env_file:
+      - db.env
+      - app.env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - default
+      - ingress
+
+  cron:
+    image: nextcloud:$NEXTCLOUD_VERSION
+    restart: always
+    volumes:
+      - $STORAGE_DIR/web:/var/www/html
+      - ./custom-entrypoint.sh:/custom-entrypoint.sh:ro
+    entrypoint: /custom-entrypoint.sh
+    command: /cron.sh
+    environment:
+      - MYSQL_HOST=$DB_HOST
+      - REDIS_HOST=redis
+    env_file:
+      - db.env
+      - app.env
+    depends_on:
+      - db
+      - redis
+
+  web:
+    image: nginx:$NGINX_VERSION
+    restart: always
+    env_file:
+      - app.env
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - $STORAGE_DIR/web:/var/www/html
+    ports:
+      - "8808:80"
+    networks:
+      - ingress
+
+networks:
+  default:
+  ingress:
+    name: ingress
+    external: true

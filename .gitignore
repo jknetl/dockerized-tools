@@ -38,3 +38,12 @@ tags
 netboot-pxe/dnsmasq/dnsmasq.conf
 
 **/wordpress-data
+
+**/.env.secrets
+**/*.secrets
+
+avo/couchdb/data
+
+avo/couchdb/couchdb_data_backup_*
+
+avo/unifi/unifi_data
