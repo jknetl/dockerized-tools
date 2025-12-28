@@ -42,7 +42,6 @@ netboot-pxe/dnsmasq/dnsmasq.conf
 **/.env.secrets
 **/*.secrets
 
-avo/couchdb/data
 
 avo/couchdb/couchdb_data_backup_*
 

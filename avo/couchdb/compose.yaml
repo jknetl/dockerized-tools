@@ -7,9 +7,10 @@ services:
     environment:
       - COUCHDB_USER=admin
     env_file:
+      - .env
       - .env.secrets
     volumes:
-        - ./data:/opt/couchdb/data
+        - $STORAGE_DIR:/opt/couchdb/data
         - ./local.ini:/opt/couchdb/etc/local.ini
     restart: unless-stopped
 networks:
