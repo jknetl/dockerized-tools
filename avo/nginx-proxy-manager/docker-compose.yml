@@ -1,7 +1,7 @@
 version: '3'
 services:
   nginx-proxy-manager:
-    image: 'jc21/nginx-proxy-manager:2.12.6'
+    image: 'jc21/nginx-proxy-manager:2.13.5'
     restart: unless-stopped
     ports:
       - '192.168.2.9:80:80'
