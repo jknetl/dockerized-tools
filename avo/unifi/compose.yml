@@ -2,13 +2,13 @@ version: "3.8"
 
 services:
   unifi:
-    image: jacobalberty/unifi:v8.5
-    container_name: unifi-controller
+    image: jacobalberty/unifi:v10.0.162
     restart: unless-stopped
+    container_name: unifi-controller
     environment:
       - TZ=Europe/Prague
     volumes:
-      - ./unifi_data:/unifi  # Persist data in a local folder
+      - $STORAGE_DIR:/unifi  # Persist data in a local folder
     ports:
       - "3478:3478/udp"       # STUN
       - "10001:10001/udp"     # AP discovery
