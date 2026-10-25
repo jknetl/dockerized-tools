@@ -3,7 +3,7 @@ version: "2"
 
 services:
   server:
-    image: gitea/gitea:1.27.1
+    image: gitea/gitea:28.2.0
     restart: always
     mem_limit: 2g
     cpus: 2.0
