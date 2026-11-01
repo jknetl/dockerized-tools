@@ -1,0 +1,115 @@
+# Based on the official rootless compose of Immich v3.3.5:
+# https://github.com/immich-app/immich/releases/download/v3.3.5/docker-compose.rootless.yml
+#
+# Differences from upstream:
+# - no published host ports; immich_server is reachable only via the `ingress` network (nginx-proxy-manager)
+# - postgres + redis on an internal-only `backend` network
+# - DB password passed as a docker secret instead of a plain env var
+# - Intel QuickSync (/dev/dri) for video transcoding, resource limits
+
+name: immich
+
+x-hardening: &hardening
+  user: "${IMMICH_UID}:${IMMICH_GID}"
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - NET_RAW
+  restart: always
+
+services:
+  immich-server:
+    <<: *hardening
+    container_name: immich_server
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION}
+    mem_limit: 4g
+    cpus: 4.0
+    env_file:
+      - .env
+    environment:
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    # QuickSync transcoding (select "Quick Sync" in Administration -> Video Transcoding)
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"   # video  (/dev/dri/card0)
+      - "106"  # render (/dev/dri/renderD128)
+    volumes:
+      - ${STORAGE_DIR}/library:/data
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - redis
+      - database
+    healthcheck:
+      disable: false
+    networks:
+      - backend
+      - default
+      - ingress
+
+  immich-machine-learning:
+    <<: *hardening
+    container_name: immich_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
+    mem_limit: 4g
+    cpus: 4.0
+    env_file:
+      - .env
+    volumes:
+      - ${STORAGE_DIR}/model-cache:/cache
+    healthcheck:
+      disable: false
+    # needs egress to download models
+    networks:
+      - default
+
+  redis:
+    <<: *hardening
+    container_name: immich_redis
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    mem_limit: 256m
+    cpus: 1.0
+    volumes:
+      - ${STORAGE_DIR}/redis:/data
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+    networks:
+      - backend
+
+  database:
+    <<: *hardening
+    container_name: immich_postgres
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    mem_limit: 2g
+    cpus: 2.0
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+      # /home is on local SSD; set to 'HDD' if the database is moved to spinning disks
+      # DB_STORAGE_TYPE: 'HDD'
+    secrets:
+      - db_password
+    volumes:
+      # local disk only - network shares are not supported for the database
+      - ${STORAGE_DIR}/postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    healthcheck:
+      disable: false
+    networks:
+      - backend
+
+secrets:
+  db_password:
+    file: ./db_password.secrets
+
+networks:
+  default:
+  backend:
+    internal: true
+  ingress:
+    name: ingress
+    external: true
