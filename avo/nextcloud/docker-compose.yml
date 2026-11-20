@@ -14,7 +14,7 @@ services:
       - db.env
 
   redis:
-    image: redis:alpine
+    image: redis:8.8.4-alpine
     restart: always
 
   app:
